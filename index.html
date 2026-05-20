@@ -4,7 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Света - Калькулятор Стройнова</title>
+
+    <!-- ТАЙТЛ -->
+    <title>Расчёт света | "Стройнова"</title>
+
+    <!-- ВСТРОЕННАЯ SVG ИКОНКА (СМАРТ-ЛАМПОЧКА) -->
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23121212'/><circle cx='50' cy='43' r='18' stroke='%2300FF88' stroke-width='6' fill='none'/><path d='M40 68h20M45 75h10' stroke='%2300FF88' stroke-width='6' stroke-linecap='round'/><path d='M50 18v8M22 43h8M70 43h8' stroke='%2300FF88' stroke-width='4' stroke-linecap='round'/></svg>">
+
     <style>
         :root {
             --bg-dark: #121212;
@@ -343,6 +350,7 @@
             touch-action: none;
         }
 
+        /* Подсказки */
         .ruler-hint {
             position: absolute;
             top: 15px;
@@ -355,6 +363,47 @@
             font-size: 12px;
             color: #ccc;
             pointer-events: none;
+        }
+
+        /* Анимированный индикатор скролла для мобилок */
+        .scroll-down-indicator {
+            display: none;
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--accent);
+            pointer-events: none;
+            animation: bounce 2s infinite;
+            border: 1px solid var(--accent);
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translate(-50%, 0);
+            }
+
+            40% {
+                transform: translate(-50%, -8px);
+            }
+
+            60% {
+                transform: translate(-50%, -4px);
+            }
         }
 
         /* === MOBILE RESPONSIVE === */
@@ -389,14 +438,19 @@
                 border-bottom: 2px solid #333;
             }
 
-            /* На мобильных разрешаем скролл по холсту и скрываем подсказку линейки */
+            /* Разрешаем скролл по холсту на мобилках */
             canvas {
                 touch-action: auto !important;
                 cursor: default;
             }
 
+            /* Прячем десктопную подсказку, показываем мобильный скролл */
             .ruler-hint {
                 display: none;
+            }
+
+            .scroll-down-indicator {
+                display: flex;
             }
 
             .gallery-grid {
@@ -414,6 +468,7 @@
 <body>
 
     <div class="container">
+        <!-- ВЕРХНЯЯ ЛЕВАЯ ПАНЕЛЬ -->
         <div class="sidebar-top">
             <div class="brand-header">
                 <h1>Калькулятор расчёта</h1>
@@ -428,11 +483,19 @@
             <div class="info-text" id="imgInfo">Изображение не выбрано</div>
         </div>
 
+        <!-- ОКНО МАКЕТА -->
         <div class="canvas-container" id="canvasContainer">
             <div class="ruler-hint" id="rulerHint">📏 Проведите мышкой для измерения линейкой</div>
+
+            <!-- СТРЕЛКА ПОДСКАЗКИ СКРОЛЛА (ТОЛЬКО НА ТЕЛЕФОНАХ) -->
+            <div class="scroll-down-indicator">
+                <span>Настройки и смета ниже</span> ↓
+            </div>
+
             <canvas id="mainCanvas"></canvas>
         </div>
 
+        <!-- НИЖНЯЯ ЛЕВАЯ ПАНЕЛЬ -->
         <div class="sidebar-bottom">
             <div class="input-group">
                 <label style="font-weight: bold;">Общая высота (м):</label>
@@ -452,6 +515,7 @@
                 <input type="number" id="ctrlPrice" value="5000" min="0">
             </div>
 
+            <!-- ЧЕК -->
             <div class="receipt">
                 <div class="receipt-header">ПРЕДВАРИТЕЛЬНАЯ СМЕТА</div>
                 <div class="receipt-sub">Проект SMART света "Стройнова"</div>
@@ -493,7 +557,7 @@
         const container = document.getElementById('canvasContainer');
         const galleryGrid = document.getElementById('galleryGrid');
 
-        // Галерея (ВАЖНО: Имена файлов должны быть на английском, в нижнем регистре!)
+        // Исправленные имена файлов пресетов с заглавной буквы
         const presetImages = ['Thermo-1.png', 'Thermo-2.png', 'Thermo-3.png', 'Thermo-4.png', 'Thermo-5.png', 'Thermo-6.png'];
 
         function buildGallery() {
@@ -529,7 +593,6 @@
             });
         }
 
-        // Загрузка с обходом блокировок кэша и CORS для мобилок
         function loadPreset(filename, element) {
             document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
             element.classList.add('active');
@@ -543,18 +606,17 @@
                 try {
                     processImage(img);
                 } catch (error) {
-                    alert("Ошибка обработки макета. Возможно файл слишком большой. " + error.message);
+                    alert("Ошибка обработки макета. Файл слишком тяжелый. " + error.message);
                     document.getElementById('imgInfo').innerHTML = "Ошибка загрузки";
                 }
             };
 
             img.onerror = () => {
-                alert(`Не удалось загрузить "${filename}". Убедитесь, что файл называется именно так (без русских букв).`);
+                alert(`Не удалось загрузить "${filename}". Проверьте, загружен ли он на хостинг.`);
                 element.classList.remove('active');
                 document.getElementById('imgInfo').innerHTML = "Файл не найден";
             };
 
-            // Добавляем таймстамп для обхода жесткого кэша браузера
             img.src = filename + "?t=" + new Date().getTime();
         }
 
@@ -585,7 +647,7 @@
             `;
             } else if (mode === 'diodes') {
                 dynamicFields.innerHTML = `
-                <div class="field-row"><label>Шаг диодов (мм):</label><input type="number" id="valDensity" value="20"></div>
+                <div class="field-row"><label>Шаг диодов (мм):</label><input type="number" id="valDensity" value="2.5" step="0.1"></div>
                 <div class="field-row"><label>Стоимость 1 шт:</label><input type="number" id="valPrice" value="30"></div>
             `;
             } else if (mode === 'relay') {
@@ -636,6 +698,11 @@
             document.getElementById('imgInfo').innerHTML = `Высота макета: ${pixelData.h} px`;
             rulerStart = { x: 0, y: 0 }; rulerEnd = { x: 0, y: 0 };
             resizeCanvas(); calculate();
+
+            // Автоматический плавный скролл до макета на мобилках после клика
+            if (window.innerWidth <= 768) {
+                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
 
         function resizeCanvas() { canvas.width = container.clientWidth; canvas.height = container.clientHeight; drawCanvas(); }
@@ -661,7 +728,6 @@
             ctx.strokeStyle = "#444"; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
             ctx.strokeRect(lx, ty, rx - lx, by - ty); ctx.setLineDash([]);
 
-            // Рисуем линейку только если экран больше 768px (ПК)
             if (window.innerWidth > 768) {
                 drawRuler();
             }
@@ -674,7 +740,7 @@
         }
 
         canvas.addEventListener('mousedown', (e) => {
-            if (!processedImage || window.innerWidth <= 768) return; // На мобильном отключаем
+            if (!processedImage || window.innerWidth <= 768) return;
             isDrawingRuler = true; rulerStart = getMousePos(e); rulerEnd = { ...rulerStart };
         });
 
