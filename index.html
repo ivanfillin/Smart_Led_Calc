@@ -371,7 +371,7 @@
             position: absolute;
             bottom: 15px;
             left: 50%;
-            transform: translateX(-50%);
+            transform: translate(-50%, 0);
             background: rgba(0, 0, 0, 0.85);
             padding: 8px 16px;
             border-radius: 20px;
@@ -379,14 +379,17 @@
             font-weight: bold;
             color: var(--accent);
             pointer-events: none;
-            animation: bounce 2s infinite;
             border: 1px solid var(--accent);
             align-items: center;
             gap: 6px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
             z-index: 10;
+            /* Плавное исчезновение */
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            opacity: 1;
         }
 
+        /* Анимация покачивания индикатора по умолчанию */
         @keyframes bounce {
 
             0%,
@@ -404,6 +407,13 @@
             60% {
                 transform: translate(-50%, -4px);
             }
+        }
+
+        /* Класс скрытия для плавного растворения */
+        .scroll-down-indicator.hidden {
+            opacity: 0 !important;
+            transform: translate(-50%, 15px) !important;
+            pointer-events: none;
         }
 
         /* === MOBILE RESPONSIVE === */
@@ -451,6 +461,7 @@
 
             .scroll-down-indicator {
                 display: flex;
+                animation: bounce 2s infinite;
             }
 
             .gallery-grid {
@@ -488,7 +499,7 @@
             <div class="ruler-hint" id="rulerHint">📏 Проведите мышкой для измерения линейкой</div>
 
             <!-- СТРЕЛКА ПОДСКАЗКИ СКРОЛЛА (ТОЛЬКО НА ТЕЛЕФОНАХ) -->
-            <div class="scroll-down-indicator">
+            <div class="scroll-down-indicator" id="scrollIndicator">
                 <span>Настройки и смета ниже</span> ↓
             </div>
 
@@ -557,7 +568,7 @@
         const container = document.getElementById('canvasContainer');
         const galleryGrid = document.getElementById('galleryGrid');
 
-        // Исправленные имена файлов пресетов с заглавной буквы
+        // Имена файлов макетов
         const presetImages = ['Thermo-1.png', 'Thermo-2.png', 'Thermo-3.png', 'Thermo-4.png', 'Thermo-5.png', 'Thermo-6.png'];
 
         function buildGallery() {
@@ -593,6 +604,7 @@
             });
         }
 
+        // Загрузка
         function loadPreset(filename, element) {
             document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
             element.classList.add('active');
@@ -780,6 +792,21 @@
 
         // Расчеты
         function formatMoney(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
+
+        // === ДИНАМИЧЕСКИЙ СКРОЛЛ-ХИНТ ===
+        window.addEventListener('scroll', () => {
+            if (window.innerWidth <= 768) {
+                const indicator = document.getElementById('scrollIndicator');
+                if (indicator) {
+                    // Если прокрутили больше чем на 80px, плавно прячем
+                    if (window.scrollY > 80) {
+                        indicator.classList.add('hidden');
+                    } else {
+                        indicator.classList.remove('hidden');
+                    }
+                }
+            }
+        });
 
         function calculate() {
             if (!processedImage) return;
