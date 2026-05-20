@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Света - Калькулятор Стройнова</title>
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --bg-panel: #1e1e1e;
+            --accent: #00FF88;
+            --text-main: #ffffff;
+            --text-muted: #a0a0a0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Desktop Grid Layout */
+        .container {
+            display: grid;
+            grid-template-columns: 440px 1fr;
+            grid-template-rows: auto minmax(0, 1fr);
+            grid-template-areas:
+                "sidebar-top canvas"
+                "sidebar-bottom canvas";
+            height: 100%;
+            width: 100%;
+        }
+
+        /* Панели */
+        .sidebar-top {
+            grid-area: sidebar-top;
+            background-color: var(--bg-panel);
+            padding: 20px 20px 10px 20px;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .sidebar-bottom {
+            grid-area: sidebar-bottom;
+            background-color: var(--bg-panel);
+            padding: 10px 20px 20px 20px;
+            border-right: 1px solid #333;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .canvas-container {
+            grid-area: canvas;
+            position: relative;
+            background-color: #181818;
+        }
+
+        /* Брендирование */
+        .brand-header {
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+            margin-bottom: 5px;
+        }
+
+        .brand-header h1 {
+            font-size: 18px;
+            margin: 0 0 5px 0;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .brand-header p {
+            font-size: 13px;
+            margin: 0;
+            color: var(--text-muted);
+        }
+
+        .brand-header span {
+            color: var(--accent);
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        /* Галерея превью */
+        .gallery-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .gallery-title {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .thumb {
+            aspect-ratio: 1;
+            background-color: #2a2a2a;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .thumb:hover {
+            border-color: #555;
+            background-color: #333;
+        }
+
+        .thumb.active {
+            border-color: var(--accent);
+            background-color: #223322;
+        }
+
+        .thumb img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+            filter: drop-shadow(0px 0px 2px rgba(255, 255, 255, 0.5)) brightness(0) invert(1);
+            opacity: 0.7;
+            transition: 0.2s;
+        }
+
+        .thumb.active img {
+            opacity: 1;
+            filter: drop-shadow(0px 0px 5px var(--accent)) brightness(0) invert(1);
+        }
+
+        .thumb-upload {
+            border: 2px dashed #555;
+            background: transparent;
+            flex-direction: column;
+            color: var(--text-muted);
+            font-size: 24px;
+            text-decoration: none;
+        }
+
+        .thumb-upload:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(0, 255, 136, 0.05);
+        }
+
+        .thumb-upload span {
+            font-size: 10px;
+            margin-top: 4px;
+            font-weight: bold;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .info-text {
+            color: var(--accent);
+            font-size: 12px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* Поля ввода */
+        .input-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #222;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        input[type="number"] {
+            background-color: #111;
+            color: white;
+            border: 1px solid #444;
+            padding: 8px;
+            border-radius: 5px;
+            width: 80px;
+            text-align: right;
+            font-size: 16px;
+        }
+
+        input[type="number"]:focus {
+            outline: 1px solid var(--accent);
+            border-color: var(--accent);
+        }
+
+        .tabs {
+            display: flex;
+            background: #2a2a2a;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px 2px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            background: transparent;
+            border: none;
+            color: gray;
+            transition: 0.2s;
+        }
+
+        .tab:hover {
+            color: white;
+        }
+
+        .tab.active {
+            background: #3a3a3a;
+            color: white;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .dynamic-fields {
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #222;
+        }
+
+        .field-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+
+        .field-row:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Чек (Смета) */
+        .receipt {
+            background-color: #fdfdfd;
+            color: #111;
+            padding: 20px;
+            margin-top: auto;
+            border-radius: 2px;
+            font-family: 'Courier New', Courier, monospace;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .receipt::before,
+        .receipt::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background-size: 12px 100%;
+        }
+
+        .receipt::before {
+            top: -6px;
+            background-image: linear-gradient(135deg, transparent 33%, #fdfdfd 33%, #fdfdfd 66%, transparent 66%), linear-gradient(45deg, transparent 33%, #fdfdfd 33%, #fdfdfd 66%, transparent 66%);
+        }
+
+        .receipt::after {
+            bottom: -6px;
+            background-image: linear-gradient(135deg, #fdfdfd 33%, transparent 33%, transparent 66%, #fdfdfd 66%), linear-gradient(45deg, #fdfdfd 33%, transparent 33%, transparent 66%, #fdfdfd 66%);
+        }
+
+        .receipt-header {
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .receipt-sub {
+            font-size: 11px;
+            text-align: center;
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        .receipt-divider {
+            border-bottom: 1px dashed #777;
+            margin: 10px 0;
+        }
+
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 6px;
+            line-height: 1.2;
+        }
+
+        .receipt-row span:nth-child(2) {
+            font-weight: bold;
+        }
+
+        .row-highlight {
+            color: #0055ff;
+            font-weight: bold;
+        }
+
+        .receipt-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #111;
+        }
+
+        /* Холст на ПК */
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        .ruler-hint {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            left: 15px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #ccc;
+            pointer-events: none;
+        }
+
+        /* === MOBILE RESPONSIVE === */
+        @media (max-width: 768px) {
+            body {
+                height: auto;
+                overflow-y: auto;
+            }
+
+            .container {
+                display: flex;
+                flex-direction: column;
+                height: auto;
+            }
+
+            .sidebar-top {
+                padding: 15px;
+                border-right: none;
+            }
+
+            .sidebar-bottom {
+                padding: 15px;
+                border-right: none;
+                overflow-y: visible;
+            }
+
+            .canvas-container {
+                width: 100%;
+                height: 45vh;
+                min-height: 350px;
+                border-top: 2px solid #333;
+                border-bottom: 2px solid #333;
+            }
+
+            /* На мобильных разрешаем скролл по холсту и скрываем подсказку линейки */
+            canvas {
+                touch-action: auto !important;
+                cursor: default;
+            }
+
+            .ruler-hint {
+                display: none;
+            }
+
+            .gallery-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 6px;
+            }
+
+            .receipt {
+                margin-top: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="sidebar-top">
+            <div class="brand-header">
+                <h1>Калькулятор расчёта</h1>
+                <p>проекта smart света для <span>"Стройнова"</span></p>
+            </div>
+
+            <div class="gallery-wrap">
+                <div class="gallery-title">Выберите макет или загрузите свой:</div>
+                <div class="gallery-grid" id="galleryGrid"></div>
+            </div>
+
+            <div class="info-text" id="imgInfo">Изображение не выбрано</div>
+        </div>
+
+        <div class="canvas-container" id="canvasContainer">
+            <div class="ruler-hint" id="rulerHint">📏 Проведите мышкой для измерения линейкой</div>
+            <canvas id="mainCanvas"></canvas>
+        </div>
+
+        <div class="sidebar-bottom">
+            <div class="input-group">
+                <label style="font-weight: bold;">Общая высота (м):</label>
+                <input type="number" id="baseHeight" value="18" step="0.1" min="0.1">
+            </div>
+
+            <div class="tabs">
+                <button class="tab active" id="tabClusters" onclick="setMode('clusters')">SMART Кластеры</button>
+                <button class="tab" id="tabDiodes" onclick="setMode('diodes')">SMART Диоды</button>
+                <button class="tab" id="tabRelay" onclick="setMode('relay')">Реле</button>
+            </div>
+
+            <div class="dynamic-fields" id="dynamicFields"></div>
+
+            <div class="input-group">
+                <label style="font-size: 13px;">Цена контроллера (шт):</label>
+                <input type="number" id="ctrlPrice" value="5000" min="0">
+            </div>
+
+            <div class="receipt">
+                <div class="receipt-header">ПРЕДВАРИТЕЛЬНАЯ СМЕТА</div>
+                <div class="receipt-sub">Проект SMART света "Стройнова"</div>
+
+                <div class="receipt-row"><span>Площадь макета:</span><span id="resArea">0.00 м²</span></div>
+                <div class="receipt-row"><span>Расчетная плотность:</span><span id="resDensity">0 шт/м²</span></div>
+
+                <div class="receipt-divider"></div>
+
+                <div class="receipt-row"><span>Элементы (<span id="resItemsCount">0</span> шт):</span><span
+                        id="resItemsCost">0 ₽</span></div>
+                <div class="receipt-row row-highlight" id="rowGroups" style="display: none;">
+                    <span>Каналы (Группы):</span><span id="resGroupsCount">0 шт</span>
+                </div>
+                <div class="receipt-row"><span>Контроллеры (<span id="resCtrlCount">0</span> шт):</span><span
+                        id="resCtrlCost">0 ₽</span></div>
+                <div class="receipt-row"><span>Коммутатор (<span id="resSwitchCount">0</span> шт):</span><span
+                        id="resSwitchCost">0 ₽</span></div>
+
+                <div class="receipt-total">
+                    <span>ИТОГО:</span><span id="resTotal">0 ₽</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'clusters';
+        let processedImage = null;
+        let pixelData = { h: 0, area: 0, top: 0, bottom: 0, left: 0, right: 0 };
+        let displayScale = 1;
+        let offsetX = 0, offsetY = 0;
+
+        let isDrawingRuler = false;
+        let rulerStart = { x: 0, y: 0 }, rulerEnd = { x: 0, y: 0 };
+
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('canvasContainer');
+        const galleryGrid = document.getElementById('galleryGrid');
+
+        // Галерея (ВАЖНО: Имена файлов должны быть на английском, в нижнем регистре!)
+        const presetImages = ['thermo-1.png', 'thermo-2.png', 'thermo-3.png', 'thermo-4.png', 'thermo-5.png', 'thermo-6.png'];
+
+        function buildGallery() {
+            presetImages.forEach((imgName, index) => {
+                const div = document.createElement('div');
+                div.className = 'thumb';
+                div.innerHTML = `<img src="${imgName}" alt="Макет ${index + 1}" onerror="this.style.display='none'">`;
+                div.title = imgName;
+                div.onclick = () => loadPreset(imgName, div);
+                galleryGrid.appendChild(div);
+            });
+
+            const uploadLabel = document.createElement('label');
+            uploadLabel.className = 'thumb thumb-upload';
+            uploadLabel.innerHTML = `+<span>СВОЙ</span><input type="file" id="fileInput" accept="image/png">`;
+            galleryGrid.appendChild(uploadLabel);
+
+            document.getElementById('fileInput').addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+                uploadLabel.classList.add('active');
+
+                document.getElementById('imgInfo').innerHTML = "Загрузка...";
+
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = new Image();
+                    img.onload = () => processImage(img);
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Загрузка с обходом блокировок кэша и CORS для мобилок
+        function loadPreset(filename, element) {
+            document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+            element.classList.add('active');
+
+            document.getElementById('imgInfo').innerHTML = "Загрузка макета...";
+
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+
+            img.onload = () => {
+                try {
+                    processImage(img);
+                } catch (error) {
+                    alert("Ошибка обработки макета. Возможно файл слишком большой. " + error.message);
+                    document.getElementById('imgInfo').innerHTML = "Ошибка загрузки";
+                }
+            };
+
+            img.onerror = () => {
+                alert(`Не удалось загрузить "${filename}". Убедитесь, что файл называется именно так (без русских букв).`);
+                element.classList.remove('active');
+                document.getElementById('imgInfo').innerHTML = "Файл не найден";
+            };
+
+            // Добавляем таймстамп для обхода жесткого кэша браузера
+            img.src = filename + "?t=" + new Date().getTime();
+        }
+
+        // Режимы
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            const ctrlPriceInput = document.getElementById('ctrlPrice');
+
+            if (mode === 'clusters') {
+                document.getElementById('tabClusters').classList.add('active');
+                ctrlPriceInput.value = 5000;
+            }
+            if (mode === 'diodes') {
+                document.getElementById('tabDiodes').classList.add('active');
+                ctrlPriceInput.value = 5000;
+            }
+            if (mode === 'relay') {
+                document.getElementById('tabRelay').classList.add('active');
+                ctrlPriceInput.value = 16000;
+            }
+
+            const dynamicFields = document.getElementById('dynamicFields');
+            if (mode === 'clusters') {
+                dynamicFields.innerHTML = `
+                <div class="field-row"><label>Кластеров на м.кв:</label><input type="number" id="valDensity" value="100"></div>
+                <div class="field-row"><label>Стоимость 1 шт:</label><input type="number" id="valPrice" value="42"></div>
+            `;
+            } else if (mode === 'diodes') {
+                dynamicFields.innerHTML = `
+                <div class="field-row"><label>Шаг диодов (мм):</label><input type="number" id="valDensity" value="20"></div>
+                <div class="field-row"><label>Стоимость 1 шт:</label><input type="number" id="valPrice" value="30"></div>
+            `;
+            } else if (mode === 'relay') {
+                dynamicFields.innerHTML = `
+                <div class="field-row"><label>Элементов на м.кв:</label><input type="number" id="valDensity" value="100"></div>
+                <div class="field-row"><label>Стоимость 1 шт:</label><input type="number" id="valPrice" value="42"></div>
+                <div class="field-row"><label style="color:var(--accent);">Диодов в группе (до 7А):</label><input type="number" id="valGroup" value="50"></div>
+            `;
+            }
+
+            document.getElementById('valDensity').addEventListener('input', calculate);
+            document.getElementById('valPrice').addEventListener('input', calculate);
+            if (mode === 'relay') document.getElementById('valGroup').addEventListener('input', calculate);
+            calculate();
+        }
+
+        document.getElementById('baseHeight').addEventListener('input', () => { calculate(); drawCanvas(); });
+        document.getElementById('ctrlPrice').addEventListener('input', calculate);
+
+        // Обработка изображения
+        function processImage(img) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = img.width; tempCanvas.height = img.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(img, 0, 0);
+
+            const imgData = tempCtx.getImageData(0, 0, img.width, img.height);
+            const data = imgData.data;
+            let minX = img.width, maxX = 0, minY = img.height, maxY = 0, areaCounter = 0;
+
+            for (let y = 0; y < img.height; y++) {
+                for (let x = 0; x < img.width; x++) {
+                    const idx = (y * img.width + x) * 4;
+                    if (data[idx + 3] > 5) {
+                        areaCounter++;
+                        if (x < minX) minX = x; if (x > maxX) maxX = x;
+                        if (y < minY) minY = y; if (y > maxY) maxY = y;
+                        data[idx] = 255; data[idx + 1] = 255; data[idx + 2] = 255;
+                    }
+                }
+            }
+
+            if (areaCounter === 0) { alert("Фигура не найдена."); return; }
+            pixelData = { h: maxY - minY + 1, area: areaCounter, top: minY, bottom: maxY, left: minX, right: maxX };
+            tempCtx.putImageData(imgData, 0, 0);
+            processedImage = tempCanvas;
+
+            document.getElementById('imgInfo').innerHTML = `Высота макета: ${pixelData.h} px`;
+            rulerStart = { x: 0, y: 0 }; rulerEnd = { x: 0, y: 0 };
+            resizeCanvas(); calculate();
+        }
+
+        function resizeCanvas() { canvas.width = container.clientWidth; canvas.height = container.clientHeight; drawCanvas(); }
+        window.addEventListener('resize', resizeCanvas);
+
+        function drawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!processedImage) return;
+
+            const cw = canvas.width, ch = canvas.height;
+            const w = processedImage.width, h = processedImage.height;
+            displayScale = Math.min(cw / w, ch / h) * 0.90;
+            const newW = w * displayScale, newH = h * displayScale;
+            offsetX = (cw - newW) / 2; offsetY = (ch - newH) / 2;
+
+            ctx.drawImage(processedImage, offsetX, offsetY, newW, newH);
+
+            const ty = pixelData.top * displayScale + offsetY;
+            const by = pixelData.bottom * displayScale + offsetY;
+            const lx = pixelData.left * displayScale + offsetX;
+            const rx = pixelData.right * displayScale + offsetX;
+
+            ctx.strokeStyle = "#444"; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+            ctx.strokeRect(lx, ty, rx - lx, by - ty); ctx.setLineDash([]);
+
+            // Рисуем линейку только если экран больше 768px (ПК)
+            if (window.innerWidth > 768) {
+                drawRuler();
+            }
+        }
+
+        // === СОБЫТИЯ ДЛЯ МЫШИ (Только для ПК) ===
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (!processedImage || window.innerWidth <= 768) return; // На мобильном отключаем
+            isDrawingRuler = true; rulerStart = getMousePos(e); rulerEnd = { ...rulerStart };
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawingRuler || window.innerWidth <= 768) return;
+            rulerEnd = getMousePos(e); drawCanvas();
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            if (window.innerWidth <= 768) return;
+            isDrawingRuler = false; drawCanvas();
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            if (window.innerWidth <= 768) return;
+            isDrawingRuler = false; drawCanvas();
+        });
+
+        // Отрисовка Линейки
+        function drawRuler() {
+            const dx = rulerEnd.x - rulerStart.x, dy = rulerEnd.y - rulerStart.y;
+            const pxLenCanvas = Math.hypot(dx, dy);
+            if (pxLenCanvas < 5) return;
+
+            ctx.beginPath(); ctx.moveTo(rulerStart.x, rulerStart.y); ctx.lineTo(rulerEnd.x, rulerEnd.y);
+            ctx.strokeStyle = "#00FF88"; ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
+
+            const realH = parseFloat(document.getElementById('baseHeight').value) || 0;
+            if (realH > 0 && pixelData.h > 0) {
+                const realLen = (pxLenCanvas / displayScale) * (realH / pixelData.h);
+                const midX = rulerStart.x + dx / 2, midY = rulerStart.y + dy / 2 - 10;
+                ctx.font = "bold 16px Arial"; ctx.textAlign = "center";
+                ctx.fillStyle = "black"; ctx.fillText(`${realLen.toFixed(3)} м`, midX + 2, midY + 2);
+                ctx.fillStyle = "#00FF88"; ctx.fillText(`${realLen.toFixed(3)} м`, midX, midY);
+            }
+        }
+
+        // Расчеты
+        function formatMoney(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
+
+        function calculate() {
+            if (!processedImage) return;
+
+            const realH = parseFloat(document.getElementById('baseHeight').value) || 0;
+            const valDensity = parseFloat(document.getElementById('valDensity').value) || 0;
+            const valPrice = parseFloat(document.getElementById('valPrice').value) || 0;
+            const ctrlPrice = parseFloat(document.getElementById('ctrlPrice').value) || 0;
+
+            let valGroup = 1;
+            if (currentMode === 'relay') valGroup = parseFloat(document.getElementById('valGroup').value) || 1;
+
+            let areaM2 = 0, itemsPerM2 = 0, totalItems = 0, controllers = 0, totalGroups = 0;
+            let costItems = 0, costCtrl = 0, costSwitch = 0, switchCount = 0;
+
+            if (realH > 0) {
+                areaM2 = pixelData.area * ((realH / pixelData.h) ** 2);
+
+                if (currentMode === 'clusters' || currentMode === 'relay') {
+                    itemsPerM2 = valDensity;
+                } else if (currentMode === 'diodes') {
+                    if (valDensity > 0) itemsPerM2 = Math.ceil((100 / valDensity * 10) * (50 / valDensity * 10));
+                }
+                totalItems = Math.ceil(areaM2 * itemsPerM2);
+
+                if (currentMode === 'relay') {
+                    totalGroups = totalItems > 0 ? Math.ceil(totalItems / valGroup) : 0;
+                    controllers = totalGroups > 0 ? Math.ceil(totalGroups / 16) : 0;
+                } else {
+                    controllers = totalItems > 0 ? Math.ceil(totalItems / 500) : 0;
+                }
+
+                if (totalItems > 0) { switchCount = 1; costSwitch = 8000; }
+
+                costItems = totalItems * valPrice;
+                costCtrl = controllers * ctrlPrice;
+            }
+
+            const totalCost = costItems + costCtrl + costSwitch;
+
+            document.getElementById('resArea').innerText = areaM2.toFixed(3) + ' м²';
+            document.getElementById('resDensity').innerText = Math.floor(itemsPerM2) + ' шт/м²';
+            document.getElementById('resItemsCount').innerText = totalItems;
+            document.getElementById('resItemsCost').innerText = formatMoney(costItems) + ' ₽';
+
+            const rowGroups = document.getElementById('rowGroups');
+            if (currentMode === 'relay') {
+                rowGroups.style.display = 'flex';
+                document.getElementById('resGroupsCount').innerText = totalGroups + ' шт';
+            } else {
+                rowGroups.style.display = 'none';
+            }
+
+            document.getElementById('resCtrlCount').innerText = controllers;
+            document.getElementById('resCtrlCost').innerText = formatMoney(costCtrl) + ' ₽';
+            document.getElementById('resSwitchCount').innerText = switchCount;
+            document.getElementById('resSwitchCost').innerText = formatMoney(costSwitch) + ' ₽';
+            document.getElementById('resTotal').innerText = formatMoney(totalCost) + ' ₽';
+        }
+
+        // Инициализация
+        buildGallery();
+        setMode('clusters');
+        resizeCanvas();
+    </script>
+
+</body>
+
+</html>
