@@ -509,7 +509,7 @@
         <!-- НИЖНЯЯ ЛЕВАЯ ПАНЕЛЬ -->
         <div class="sidebar-bottom">
             <div class="input-group">
-                <label style="font-weight: bold;">Общая высота (м):</label>
+                <label style="font-weight: bold;">Высота конструкции (м):</label>
                 <input type="number" id="baseHeight" value="18" step="0.1" min="0.1">
             </div>
 
@@ -568,7 +568,7 @@
         const container = document.getElementById('canvasContainer');
         const galleryGrid = document.getElementById('galleryGrid');
 
-        // Имена файлов макетов
+        // Имена файлов макетов (Correct Capitalization)
         const presetImages = ['Thermo-1.png', 'Thermo-2.png', 'Thermo-3.png', 'Thermo-4.png', 'Thermo-5.png', 'Thermo-6.png', 'Thermo-7.png'];
 
         function buildGallery() {
@@ -659,7 +659,7 @@
             `;
             } else if (mode === 'diodes') {
                 dynamicFields.innerHTML = `
-                <div class="field-row"><label>Шаг диодов (мм):</label><input type="number" id="valDensity" value="25" step="0.1"></div>
+                <div class="field-row"><label>Шаг диодов (мм):</label><input type="number" id="valDensity" value="2.5" step="0.1"></div>
                 <div class="field-row"><label>Стоимость 1 шт:</label><input type="number" id="valPrice" value="30"></div>
             `;
             } else if (mode === 'relay') {
@@ -736,9 +736,39 @@
             const by = pixelData.bottom * displayScale + offsetY;
             const lx = pixelData.left * displayScale + offsetX;
             const rx = pixelData.right * displayScale + offsetX;
+            const cx = (lx + rx) / 2;
 
+            // 1. Пунктирная серая рамка макета
             ctx.strokeStyle = "#444"; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
             ctx.strokeRect(lx, ty, rx - lx, by - ty); ctx.setLineDash([]);
+
+            // 2. Красная центральная линия выбранной высоты
+            ctx.strokeStyle = "rgba(0,0,0,0.5)"; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(cx, ty); ctx.lineTo(cx, by); ctx.stroke();
+
+            ctx.strokeStyle = "#FF3B30"; ctx.lineWidth = 1.5; ctx.setLineDash([6, 4]);
+            ctx.beginPath(); ctx.moveTo(cx, ty); ctx.lineTo(cx, by); ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 3. Текст-пометка выбранной высоты (например, "18 м")
+            const realH = parseFloat(document.getElementById('baseHeight').value) || 0;
+            if (realH > 0) {
+                const heightText = `${realH} м`;
+                const midY = (ty + by) / 2;
+                const textX = cx + 12;
+
+                ctx.font = "bold 14px Arial";
+                ctx.textAlign = "left";
+                ctx.textBaseline = "middle";
+
+                // Тень текста
+                ctx.fillStyle = "black";
+                ctx.fillText(heightText, textX + 1.5, midY + 1.5);
+
+                // Основной цвет (зеленый акцентный)
+                ctx.fillStyle = "#00FF88";
+                ctx.fillText(heightText, textX, midY);
+            }
 
             if (window.innerWidth > 768) {
                 drawRuler();
